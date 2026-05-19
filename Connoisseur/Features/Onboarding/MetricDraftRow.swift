@@ -10,6 +10,7 @@ import SwiftUI
 struct MetricDraftRow: View {
     @Binding var metric: MetricDraft
     let tintName: String
+    var showsBackground = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -38,6 +39,9 @@ struct MetricDraftRow: View {
             .pickerStyle(.segmented)
         }
         .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(
+            showsBackground ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.clear),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
     }
 }

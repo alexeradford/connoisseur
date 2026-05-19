@@ -8,13 +8,26 @@
 import SwiftData
 import SwiftUI
 
+#if canImport(ImagePlayground)
+import ImagePlayground
+#endif
+
 struct OnboardingFlowView: View {
     @Environment(\.modelContext) private var modelContext
+
+    #if canImport(ImagePlayground)
+    @Environment(\.supportsImagePlayground) private var supportsImagePlayground
+    #endif
+
     @State private var step = 0
     @State private var categoryTitle = ""
     @State private var categoryPrompt = ""
     @State private var symbolName = "sparkles"
     @State private var tintName = "mint"
+    @State private var generatedIconFilename: String?
+    @State private var isShowingImagePlaygroundLauncher = false
+    @State private var isShowingImagePlayground = false
+    @State private var iconGenerationError: String?
     @State private var metrics: [MetricDraft] = [
         MetricDraft(title: "Taste", weight: 1.5, polarity: .positive),
         MetricDraft(title: "Vibe", weight: 1, polarity: .positive),
@@ -49,21 +62,48 @@ struct OnboardingFlowView: View {
             .padding()
             .animation(.spring(response: 0.45, dampingFraction: 0.78), value: step)
         }
+        .alert("Icon Not Saved", isPresented: Binding(
+            get: { iconGenerationError != nil },
+            set: { if !$0 { iconGenerationError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(iconGenerationError ?? "")
+        }
+        #if canImport(ImagePlayground)
+        .overlay {
+            if isShowingImagePlaygroundLauncher {
+                ImagePlaygroundLauncherOverlay {
+                    cancelImagePlaygroundLaunch()
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.15), value: isShowingImagePlaygroundLauncher)
+        .imagePlaygroundSheet(
+            isPresented: $isShowingImagePlayground,
+            concept: iconGenerationConcept,
+            sourceImage: nil,
+            onCompletion: handleGeneratedIcon,
+            onCancellation: {
+                isShowingImagePlaygroundLauncher = false
+            }
+        )
+        #endif
     }
 
     private var onboardingHeader: some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(ConnoisseurTheme.tint(named: tintName).gradient)
-                    .frame(width: 76, height: 76)
-                    .shadow(color: ConnoisseurTheme.tint(named: tintName).opacity(0.25), radius: 18, y: 10)
-
-                Image(systemName: symbolName)
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(.bounce, value: step)
-            }
+            CategoryIconView(
+                symbolName: symbolName,
+                tintName: tintName,
+                generatedIconFilename: generatedIconFilename,
+                size: 76,
+                cornerRadius: 22,
+                symbolFont: .system(size: 32, weight: .bold)
+            )
+            .shadow(color: ConnoisseurTheme.tint(named: tintName).opacity(0.25), radius: 18, y: 10)
+            .symbolEffect(.bounce, value: step)
 
             VStack(spacing: 6) {
                 Text(stepTitle)
@@ -119,55 +159,90 @@ struct OnboardingFlowView: View {
     }
 
     private var categoryStep: some View {
-        VStack(spacing: 18) {
-            TextField("What are you ranking?", text: $categoryTitle)
-                .textFieldStyle(.plain)
-                .font(.title.bold())
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        ScrollView {
+            VStack(spacing: 18) {
+                TextField("What are you ranking?", text: $categoryTitle)
+                    .textFieldStyle(.plain)
+                    .font(.title.bold())
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 16)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
-            TextField("Tiny note, like 'city martinis' or 'rewatchables'", text: $categoryPrompt, axis: .vertical)
-                .textFieldStyle(.plain)
-                .padding(16)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                TextField("Tiny note, like 'city martinis' or 'rewatchables'", text: $categoryPrompt, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .padding(16)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
-            iconPicker
-            tintPicker
+                iconPicker
+                tintPicker
+            }
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 2)
         }
-        .frame(maxWidth: 560)
+        .scrollIndicators(.hidden)
     }
 
     private var iconPicker: some View {
-        HStack(spacing: 10) {
-            ForEach(["sparkles", "popcorn.fill", "wineglass.fill", "flag.checkered", "fork.knife"], id: \.self) { icon in
-                Button {
-                    symbolName = icon
-                } label: {
-                    Image(systemName: icon)
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 46, height: 46)
-                        .foregroundStyle(symbolName == icon ? .white : ConnoisseurTheme.tint(named: tintName))
-                        .background(symbolName == icon ? ConnoisseurTheme.tint(named: tintName) : .white.opacity(0.72), in: Circle())
+        VStack(spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 10)], spacing: 10) {
+                ForEach(CategoryAppearanceOptions.symbols) { option in
+                    Button {
+                        symbolName = option.systemName
+                        clearGeneratedIcon()
+                    } label: {
+                        Image(systemName: option.systemName)
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 46, height: 46)
+                            .foregroundStyle(generatedIconFilename == nil && symbolName == option.systemName ? .white : ConnoisseurTheme.tint(named: tintName))
+                            .background(
+                                generatedIconFilename == nil && symbolName == option.systemName
+                                ? ConnoisseurTheme.tint(named: tintName)
+                                : .white.opacity(0.72),
+                                in: RoundedRectangle(cornerRadius: 8)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(option.title)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(icon)
+            }
+
+            #if canImport(ImagePlayground)
+            Button {
+                openImagePlayground()
+            } label: {
+                Label("Generate Icon", systemImage: "sparkles")
+                    .font(.headline)
+            }
+            .buttonStyle(.bordered)
+            .tint(ConnoisseurTheme.tint(named: tintName))
+            .disabled(!supportsImagePlayground)
+            #endif
+
+            if generatedIconFilename != nil {
+                Button {
+                    clearGeneratedIcon()
+                } label: {
+                    Label("Use Symbol", systemImage: "square.grid.2x2")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
             }
         }
     }
 
     private var tintPicker: some View {
         HStack(spacing: 12) {
-            ForEach(ConnoisseurTheme.tintNames, id: \.self) { name in
+            ForEach(CategoryAppearanceOptions.tints) { option in
                 Button {
-                    tintName = name
+                    tintName = option.name
                 } label: {
                     Circle()
-                        .fill(ConnoisseurTheme.tint(named: name))
+                        .fill(ConnoisseurTheme.tint(named: option.name))
                         .frame(width: 28, height: 28)
                         .overlay {
-                            if tintName == name {
+                            if tintName == option.name {
                                 Image(systemName: "checkmark")
                                     .font(.caption.bold())
                                     .foregroundStyle(.white)
@@ -175,7 +250,7 @@ struct OnboardingFlowView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(name)
+                .accessibilityLabel(option.title)
             }
         }
     }
@@ -210,7 +285,7 @@ struct OnboardingFlowView: View {
         VStack(spacing: 18) {
             VStack(spacing: 12) {
                 Text(categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your first list" : categoryTitle)
-                    .font(.system(size: 44, weight: .black, design: .rounded))
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
                 HStack {
@@ -226,9 +301,14 @@ struct OnboardingFlowView: View {
                 .minimumScaleFactor(0.7)
             }
 
-            Image(systemName: "trophy.fill")
-                .font(.system(size: 88, weight: .black))
-                .foregroundStyle(ConnoisseurTheme.tint(named: tintName).gradient)
+            CategoryIconView(
+                symbolName: symbolName,
+                tintName: tintName,
+                generatedIconFilename: generatedIconFilename,
+                size: 88,
+                cornerRadius: 24,
+                symbolFont: .system(size: 40, weight: .bold)
+            )
                 .symbolEffect(.bounce, value: step)
         }
     }
@@ -318,7 +398,8 @@ struct OnboardingFlowView: View {
             title: categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines),
             prompt: categoryPrompt.trimmingCharacters(in: .whitespacesAndNewlines),
             symbolName: symbolName,
-            tintName: tintName
+            tintName: tintName,
+            generatedIconFilename: generatedIconFilename
         )
 
         for (index, draft) in metrics.enumerated() {
@@ -337,4 +418,41 @@ struct OnboardingFlowView: View {
 
         modelContext.insert(category)
     }
+
+    private var iconGenerationConcept: String {
+        let titleText = categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let promptText = categoryPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let categoryDescription = titleText.isEmpty ? "a personal ranking category" : titleText
+        let note = promptText.isEmpty ? "" : " inspired by \(promptText)"
+
+        return "A clean icon for \(categoryDescription)\(note), with \(ConnoisseurTheme.tintTitle(named: tintName).lowercased()) color accents, no words or letters"
+    }
+
+    private func handleGeneratedIcon(_ sourceURL: URL) {
+        isShowingImagePlaygroundLauncher = false
+
+        do {
+            let filename = try CategoryIconStorage.storeGeneratedIcon(from: sourceURL, replacing: generatedIconFilename)
+            generatedIconFilename = filename
+        } catch {
+            iconGenerationError = error.localizedDescription
+        }
+    }
+
+    private func clearGeneratedIcon() {
+        CategoryIconStorage.deleteIcon(named: generatedIconFilename)
+        generatedIconFilename = nil
+    }
+
+    #if canImport(ImagePlayground)
+    private func openImagePlayground() {
+        isShowingImagePlaygroundLauncher = true
+        isShowingImagePlayground = true
+    }
+
+    private func cancelImagePlaygroundLaunch() {
+        isShowingImagePlayground = false
+        isShowingImagePlaygroundLauncher = false
+    }
+    #endif
 }

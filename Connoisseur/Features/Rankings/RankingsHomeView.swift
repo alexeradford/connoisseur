@@ -27,34 +27,7 @@ struct RankingsHomeView: View {
                     .ignoresSafeArea()
 
                 if let selectedCategory {
-                    if mode == .list {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
-                                CategorySwitcherView(
-                                    categories: orderedCategories,
-                                    selectedCategoryID: selectedCategory.id,
-                                    selectedCategory: selectedCategory,
-                                    selectCategory: selectCategory,
-                                    moveSelection: moveSelection
-                                )
-
-                                RankingsListView(category: selectedCategory) {
-                                    itemEditorCategory = selectedCategory
-                                }
-                            }
-                            .padding()
-                        }
-                        .scrollIndicators(.hidden)
-                    } else {
-                        RankingMapView(
-                            category: selectedCategory,
-                            categories: orderedCategories,
-                            selectedCategoryID: selectedCategory.id,
-                            selectCategory: selectCategory,
-                            moveSelection: moveSelection
-                        )
-                        .ignoresSafeArea(edges: [.horizontal, .bottom])
-                    }
+                    rankingsContent(for: selectedCategory)
                 }
             }
 #if os(iOS)
@@ -79,18 +52,6 @@ struct RankingsHomeView: View {
                     }
                 }
 #else
-                ToolbarItem(placement: .topBarLeading) {
-                    Picker("Mode", selection: $mode) {
-                        ForEach(RankingsMode.allCases) { mode in
-                            Label(mode.title, systemImage: mode.symbolName)
-                                .tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(minWidth: 90)
-                }
-                .sharedBackgroundVisibility(.hidden)
-                
                 ToolbarItem(placement: .topBarLeading) {
                     if let selectedCategory {
                         categoryMenu(for: selectedCategory)
@@ -133,6 +94,69 @@ struct RankingsHomeView: View {
         }
     }
 
+    @ViewBuilder
+    private func rankingsContent(for selectedCategory: RankingCategory) -> some View {
+#if os(iOS)
+        TabView(selection: $mode) {
+            rankingsListContent(for: selectedCategory)
+                .tag(RankingsMode.list)
+                .tabItem {
+                    Label(RankingsMode.list.title, systemImage: RankingsMode.list.symbolName)
+                }
+
+            rankingsMapContent(for: selectedCategory)
+                .tag(RankingsMode.map)
+                .tabItem {
+                    Label(RankingsMode.map.title, systemImage: RankingsMode.map.symbolName)
+                }
+        }
+#else
+        switch mode {
+        case .list:
+            rankingsListContent(for: selectedCategory)
+        case .map:
+            rankingsMapContent(for: selectedCategory)
+        }
+#endif
+    }
+
+    private func rankingsListContent(for selectedCategory: RankingCategory) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                CategorySwitcherView(
+                    categories: orderedCategories,
+                    selectedCategoryID: selectedCategory.id,
+                    selectedCategory: selectedCategory,
+                    selectCategory: selectCategory,
+                    moveSelection: moveSelection
+                )
+
+                RankingsListView(category: selectedCategory) {
+                    itemEditorCategory = selectedCategory
+                }
+            }
+            .padding()
+        }
+        .scrollIndicators(.hidden)
+        .background(ConnoisseurTheme.background.ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private func rankingsMapContent(for selectedCategory: RankingCategory) -> some View {
+        RankingMapView(
+            category: selectedCategory,
+            categories: orderedCategories,
+            selectedCategoryID: selectedCategory.id,
+            selectCategory: selectCategory,
+            moveSelection: moveSelection
+        )
+#if os(iOS)
+        .ignoresSafeArea(edges: .horizontal)
+#else
+        .ignoresSafeArea(edges: [.horizontal, .bottom])
+#endif
+    }
+
     private var selectedCategory: RankingCategory? {
         if let selectedCategoryID, let category = orderedCategories.first(where: { $0.id == selectedCategoryID }) {
             return category
@@ -152,10 +176,22 @@ struct RankingsHomeView: View {
                     Button {
                         selectCategory(category)
                     } label: {
-                        if category.id == selectedCategory.id {
-                            Label(category.title, systemImage: "checkmark")
-                        } else {
-                            Label(category.title, systemImage: category.symbolName)
+                        Label {
+                            HStack {
+                                Text(category.title)
+
+                                if category.id == selectedCategory.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        } icon: {
+                            CategoryIconView(
+                                category: category,
+                                size: 18,
+                                cornerRadius: 5,
+                                style: .glyph,
+                                symbolFont: .caption.weight(.bold)
+                            )
                         }
                     }
                 }

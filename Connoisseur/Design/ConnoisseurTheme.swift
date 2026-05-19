@@ -28,10 +28,28 @@ enum ConnoisseurTheme {
             Color(red: 0.48, green: 0.32, blue: 0.86)
         case "blue":
             Color(red: 0.17, green: 0.43, blue: 0.86)
+        case "teal":
+            Color(red: 0.08, green: 0.52, blue: 0.62)
+        case "forest":
+            Color(red: 0.16, green: 0.43, blue: 0.24)
+        case "gold":
+            Color(red: 0.82, green: 0.58, blue: 0.12)
+        case "coral":
+            Color(red: 0.93, green: 0.34, blue: 0.26)
+        case "rose":
+            Color(red: 0.87, green: 0.24, blue: 0.50)
+        case "indigo":
+            Color(red: 0.27, green: 0.32, blue: 0.74)
+        case "slate":
+            Color(red: 0.34, green: 0.39, blue: 0.48)
         default:
             Color(red: 0.05, green: 0.58, blue: 0.48)
         }
     }
 
-    static let tintNames = ["mint", "berry", "citrus", "violet", "blue"]
+    static let tintNames = CategoryAppearanceOptions.tints.map(\.name)
+
+    static func tintTitle(named name: String) -> String {
+        CategoryAppearanceOptions.tints.first { $0.name == name }?.title ?? name.capitalized
+    }
 }

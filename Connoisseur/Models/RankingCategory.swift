@@ -15,6 +15,7 @@ final class RankingCategory {
     var prompt: String
     var symbolName: String
     var tintName: String
+    var generatedIconFilename: String?
     var sortIndex: Int?
     var createdAt: Date
     var updatedAt: Date
@@ -31,6 +32,7 @@ final class RankingCategory {
         prompt: String = "",
         symbolName: String = "trophy.fill",
         tintName: String = "mint",
+        generatedIconFilename: String? = nil,
         sortIndex: Int? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now,
@@ -42,6 +44,7 @@ final class RankingCategory {
         self.prompt = prompt
         self.symbolName = symbolName
         self.tintName = tintName
+        self.generatedIconFilename = generatedIconFilename
         self.sortIndex = sortIndex
         self.createdAt = createdAt
         self.updatedAt = updatedAt

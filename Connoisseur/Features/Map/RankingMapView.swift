@@ -29,7 +29,7 @@ struct RankingMapView: View {
                         Annotation(item.title, coordinate: CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)) {
                             VStack(spacing: 4) {
                                 Text("\(index + 1)")
-                                    .font(.caption.monospacedDigit().weight(.black))
+                                    .font(.caption.monospacedDigit().weight(.bold))
                                     .foregroundStyle(.white)
                                     .frame(width: 30, height: 30)
                                     .background(ConnoisseurTheme.tint(named: category.tintName), in: Circle())
@@ -60,16 +60,16 @@ struct RankingMapView: View {
     private var categoryOverlay: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: category.symbolName)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 46, height: 46)
-                    .background(ConnoisseurTheme.tint(named: category.tintName).gradient, in: RoundedRectangle(cornerRadius: 8))
+                CategoryIconView(
+                    category: category,
+                    size: 46,
+                    symbolFont: .system(size: 22, weight: .bold)
+                )
                     .symbolEffect(.bounce, value: selectedCategoryID)
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(category.title)
-                        .font(.title3.weight(.black))
+                        .font(.title3.weight(.bold))
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
@@ -101,13 +101,7 @@ struct RankingMapView: View {
         }
         .padding(14)
         .frame(maxWidth: 420, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(.white.opacity(0.34), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.12), radius: 18, y: 10)
-        .contentShape(Rectangle())
+        .glassEffect(.regular, in: .capsule)
         .gesture(
             DragGesture(minimumDistance: 28)
                 .onEnded { value in
@@ -150,7 +144,13 @@ struct RankingMapView: View {
                         selectCategory(category)
                     } label: {
                         HStack(spacing: 7) {
-                            Image(systemName: category.symbolName)
+                            CategoryIconView(
+                                category: category,
+                                size: 16,
+                                cornerRadius: 5,
+                                style: .glyph,
+                                symbolFont: .caption.weight(.bold)
+                            )
                             Text(category.title)
                                 .lineLimit(1)
                         }

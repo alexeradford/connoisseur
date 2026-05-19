@@ -33,7 +33,7 @@ struct RankedItemCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("#\(rank)")
-                        .font(.headline.monospacedDigit().weight(.black))
+                        .font(.headline.monospacedDigit().weight(.bold))
                         .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
 
                     Text(item.title)
@@ -59,7 +59,7 @@ struct RankedItemCard: View {
             }
 
             Text(item.score(using: category.sortedMetrics).scoreString)
-                .font(.system(.title2, design: .rounded, weight: .black))
+                .font(.system(.title2, design: .rounded, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
                 .frame(width: 52, alignment: .trailing)

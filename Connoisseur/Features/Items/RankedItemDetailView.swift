@@ -77,7 +77,7 @@ struct RankedItemDetailView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(item.title)
-                    .font(.system(.largeTitle, design: .rounded, weight: .black))
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
                     .shadow(radius: 8)
 
@@ -102,7 +102,7 @@ struct RankedItemDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 Text(item.score(using: category.sortedMetrics).scoreString)
-                    .font(.system(size: 54, weight: .black, design: .rounded))
+                    .font(.system(size: 50, weight: .bold, design: .rounded))
                     .monospacedDigit()
 
                 Text("/10")

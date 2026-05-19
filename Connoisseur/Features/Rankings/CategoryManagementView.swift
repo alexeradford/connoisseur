@@ -100,11 +100,11 @@ private struct CategoryManagementRow: View {
                 }
             }
         } icon: {
-            Image(systemName: category.symbolName)
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(ConnoisseurTheme.tint(named: category.tintName), in: RoundedRectangle(cornerRadius: 8))
+            CategoryIconView(
+                category: category,
+                size: 34,
+                symbolFont: .headline
+            )
         }
         .padding(.vertical, 4)
     }

@@ -20,7 +20,7 @@ struct CategorySwitcherView: View {
     let moveSelection: (Direction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             categoryHero
 
             if categories.count > 1 {
@@ -31,7 +31,13 @@ struct CategorySwitcherView: View {
                                 selectCategory(category)
                             } label: {
                                 HStack(spacing: 8) {
-                                    Image(systemName: category.symbolName)
+                                    CategoryIconView(
+                                        category: category,
+                                        size: 18,
+                                        cornerRadius: 5,
+                                        style: .glyph,
+                                        symbolFont: .caption.weight(.bold)
+                                    )
                                     Text(category.title)
                                         .lineLimit(1)
                                 }
@@ -57,27 +63,23 @@ struct CategorySwitcherView: View {
     }
 
     private var categoryHero: some View {
-        HStack(spacing: 18) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(ConnoisseurTheme.tint(named: selectedCategory.tintName).gradient)
-                    .frame(width: 82, height: 82)
+        HStack(spacing: 14) {
+            CategoryIconView(
+                category: selectedCategory,
+                size: 64,
+                symbolFont: .system(size: 28, weight: .semibold)
+            )
+            .symbolEffect(.bounce, value: selectedCategoryID)
 
-                Image(systemName: selectedCategory.symbolName)
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(.bounce, value: selectedCategoryID)
-            }
-
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(selectedCategory.title)
-                    .font(.system(.largeTitle, design: .rounded, weight: .black))
+                    .font(.system(.title, design: .rounded, weight: .bold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)
 
                 if !selectedCategory.prompt.isEmpty {
                     Text(selectedCategory.prompt)
-                        .font(.headline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -86,7 +88,7 @@ struct CategorySwitcherView: View {
                     Label("\(selectedCategory.items.count)", systemImage: "star.fill")
                     Label("\(selectedCategory.metrics.count)", systemImage: "slider.horizontal.3")
                 }
-                .font(.caption.weight(.bold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             }
 

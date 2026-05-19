@@ -155,7 +155,7 @@ struct ItemEditorView: View {
                 Spacer()
 
                 Text(projectedScore.scoreString)
-                    .font(.title3.monospacedDigit().weight(.black))
+                    .font(.title3.monospacedDigit().weight(.bold))
             }
 
             ForEach(category.sortedMetrics) { metric in

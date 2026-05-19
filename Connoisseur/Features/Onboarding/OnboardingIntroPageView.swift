@@ -26,14 +26,14 @@ struct OnboardingIntroPageView: View {
                     .shadow(color: ConnoisseurTheme.tint(named: tintName).opacity(0.25), radius: 26, y: 14)
 
                 Image(systemName: symbolName)
-                    .font(.system(size: 54, weight: .black))
+                    .font(.system(size: 54, weight: .bold))
                     .foregroundStyle(.white)
                     .symbolEffect(.bounce, value: animationValue)
             }
 
             VStack(spacing: 10) {
                 Text(title)
-                    .font(.system(size: 46, weight: .black, design: .rounded))
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.75)
 
