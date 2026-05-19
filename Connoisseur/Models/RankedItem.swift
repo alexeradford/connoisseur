@@ -17,6 +17,7 @@ final class RankedItem {
     var locationAddress: String
     var latitude: Double?
     var longitude: Double?
+    var rankedAt: Date?
     var createdAt: Date
     var updatedAt: Date
     var category: RankingCategory?
@@ -35,6 +36,7 @@ final class RankedItem {
         locationAddress: String = "",
         latitude: Double? = nil,
         longitude: Double? = nil,
+        rankedAt: Date = .now,
         createdAt: Date = .now,
         updatedAt: Date = .now,
         category: RankingCategory? = nil,
@@ -48,6 +50,7 @@ final class RankedItem {
         self.locationAddress = locationAddress
         self.latitude = latitude
         self.longitude = longitude
+        self.rankedAt = rankedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.category = category
@@ -58,6 +61,10 @@ final class RankedItem {
     var coordinate: RankingCoordinate? {
         guard let latitude, let longitude else { return nil }
         return RankingCoordinate(latitude: latitude, longitude: longitude)
+    }
+
+    var displayDate: Date {
+        rankedAt ?? createdAt
     }
 
     var sortedPhotos: [RankedPhoto] {

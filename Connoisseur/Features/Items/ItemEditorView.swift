@@ -22,6 +22,7 @@ struct ItemEditorView: View {
     @State private var locationAddress: String
     @State private var latitude: Double?
     @State private var longitude: Double?
+    @State private var rankedAt: Date
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var pendingPhotoData: [Data] = []
     @State private var isShowingPlacePicker = false
@@ -38,6 +39,7 @@ struct ItemEditorView: View {
         _locationAddress = State(initialValue: item?.locationAddress ?? "")
         _latitude = State(initialValue: item?.latitude)
         _longitude = State(initialValue: item?.longitude)
+        _rankedAt = State(initialValue: item?.displayDate ?? .now)
     }
 
     var body: some View {
@@ -46,6 +48,7 @@ struct ItemEditorView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     photoSection
                     detailsSection
+                    dateSection
                     scoreSection
                     placeSection
                 }
@@ -127,6 +130,18 @@ struct ItemEditorView: View {
                 .lineLimit(4...10)
                 .textFieldStyle(.plain)
                 .padding(16)
+                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private var dateSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Date")
+                .font(.title3.bold())
+
+            DatePicker("Date and Time", selection: $rankedAt, displayedComponents: [.date, .hourAndMinute])
+                .datePickerStyle(.compact)
+                .padding(14)
                 .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
         }
     }
@@ -283,6 +298,7 @@ struct ItemEditorView: View {
         savedItem.locationAddress = locationAddress.trimmingCharacters(in: .whitespacesAndNewlines)
         savedItem.latitude = latitude
         savedItem.longitude = longitude
+        savedItem.rankedAt = rankedAt
         savedItem.updatedAt = .now
 
         for metric in category.sortedMetrics {

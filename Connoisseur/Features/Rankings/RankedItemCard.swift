@@ -50,6 +50,11 @@ struct RankedItemCard: View {
                         .lineLimit(1)
                 }
 
+                Label(item.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
                 MetricSparklineView(category: category, item: item)
             }
 

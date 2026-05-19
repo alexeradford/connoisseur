@@ -26,6 +26,13 @@ struct RankedItemDetailView: View {
                         .background(.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 8))
                 }
 
+                Label(item.displayDate.formatted(date: .complete, time: .shortened), systemImage: "calendar")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 8))
+
                 if item.coordinate != nil {
                     RankingSingleItemMapView(item: item)
                         .frame(height: 260)
@@ -80,6 +87,11 @@ struct RankedItemDetailView: View {
                         .foregroundStyle(.white.opacity(0.9))
                         .shadow(radius: 8)
                 }
+
+                Label(item.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .shadow(radius: 8)
             }
             .padding(18)
         }
