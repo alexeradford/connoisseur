@@ -1,5 +1,5 @@
 //
-//  RankedItemCard.swift
+//  RankedEntryCard.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -7,23 +7,23 @@
 
 import SwiftUI
 
-struct RankedItemCard: View {
-    let category: RankingCategory
-    let item: RankedItem
+struct RankedEntryCard: View {
+    let list: RankedList
+    let entry: RankedEntry
     let rank: Int
 
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                if let photo = item.sortedPhotos.first {
+                if let photo = entry.sortedPhotos.first {
                     PhotoThumbnail(data: photo.data)
                 } else {
                     Rectangle()
-                        .fill(ConnoisseurTheme.tint(named: category.tintName).opacity(0.14))
+                        .fill(ConnoisseurTheme.tint(named: list.tintName).opacity(0.14))
                         .overlay {
                             Image(systemName: "photo.badge.plus")
                                 .font(.title2)
-                                .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
+                                .foregroundStyle(ConnoisseurTheme.tint(named: list.tintName))
                         }
                 }
             }
@@ -34,41 +34,36 @@ struct RankedItemCard: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("#\(rank)")
                         .font(.headline.monospacedDigit().weight(.bold))
-                        .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
+                        .foregroundStyle(ConnoisseurTheme.tint(named: list.tintName))
 
-                    Text(item.title)
+                    Text(entry.title)
                         .font(.headline)
                         .lineLimit(2)
 
                     Spacer()
                 }
 
-                if !item.locationName.isEmpty {
-                    Label(item.locationName, systemImage: "mappin.and.ellipse")
+                if !entry.locationName.isEmpty {
+                    Label(entry.locationName, systemImage: "mappin.and.ellipse")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
 
-                Label(item.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
+                Label(entry.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
-                MetricSparklineView(category: category, item: item)
+                MetricSparklineView(list: list, entry: entry)
             }
 
-            Text(item.score(using: category.sortedMetrics).scoreString)
+            Text(entry.score(using: list.sortedMetrics).scoreString)
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
                 .frame(width: 52, alignment: .trailing)
         }
-        .padding(12)
-        .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.7), lineWidth: 1)
-        }
+        .padding(.vertical, 12)
     }
 }

@@ -38,7 +38,7 @@ struct PlacePickerSheetView: View {
                     TextField("Search restaurants, venues, courses", text: $query)
                         .textFieldStyle(.plain)
                         .padding(14)
-                        .background(.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 8))
+                        .connoisseurField()
 
                     if let selectedLocation {
                         selectedPlaceRow(selectedLocation)
@@ -200,7 +200,7 @@ struct PlacePickerSheetView: View {
             Spacer()
         }
         .padding(14)
-        .background(.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 8))
+        .connoisseurField()
     }
 
     private func locationSection(title: String, locations: [RankedLocation]) -> some View {
@@ -245,7 +245,7 @@ struct PlacePickerSheetView: View {
                     }
                 }
             }
-            .background(.white.opacity(0.74), in: RoundedRectangle(cornerRadius: 8))
+            .connoisseurField()
         }
     }
 

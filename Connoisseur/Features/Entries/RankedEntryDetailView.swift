@@ -1,5 +1,5 @@
 //
-//  RankedItemDetailView.swift
+//  RankedEntryDetailView.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct RankedItemDetailView: View {
-    let category: RankingCategory
-    let item: RankedItem
+struct RankedEntryDetailView: View {
+    let list: RankedList
+    let entry: RankedEntry
     @State private var isEditing = false
 
     var body: some View {
@@ -18,23 +18,23 @@ struct RankedItemDetailView: View {
                 header
                 scorePanel
 
-                if !item.notes.isEmpty {
-                    Text(item.notes)
+                if !entry.notes.isEmpty {
+                    Text(entry.notes)
                         .font(.body)
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 8))
+                        .connoisseurField()
                 }
 
-                Label(item.displayDate.formatted(date: .complete, time: .shortened), systemImage: "calendar")
+                Label(entry.displayDate.formatted(date: .complete, time: .shortened), systemImage: "calendar")
                     .font(.headline)
                     .foregroundStyle(.secondary)
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.white.opacity(0.68), in: RoundedRectangle(cornerRadius: 8))
+                    .connoisseurField()
 
-                if item.coordinate != nil {
-                    RankingSingleItemMapView(item: item)
+                if entry.coordinate != nil {
+                    RankingSingleEntryMapView(entry: entry)
                         .frame(height: 260)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -42,7 +42,7 @@ struct RankedItemDetailView: View {
             .padding()
         }
         .background(ConnoisseurTheme.background.ignoresSafeArea())
-        .navigationTitle(item.title)
+        .navigationTitle(entry.title)
 #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -52,43 +52,43 @@ struct RankedItemDetailView: View {
             } label: {
                 Image(systemName: "pencil")
             }
-            .accessibilityLabel("Edit item")
+            .accessibilityLabel("Edit entry")
         }
         .sheet(isPresented: $isEditing) {
-            ItemEditorView(category: category, item: item)
+            RankedEntryEditorView(list: list, entry: entry)
         }
     }
 
     private var header: some View {
         ZStack(alignment: .bottomLeading) {
-            if let photo = item.sortedPhotos.first {
+            if let photo = entry.sortedPhotos.first {
                 PhotoThumbnail(data: photo.data)
                     .frame(height: 300)
             } else {
                 Rectangle()
-                    .fill(ConnoisseurTheme.tint(named: category.tintName).opacity(0.18))
+                    .fill(ConnoisseurTheme.tint(named: list.tintName).opacity(0.18))
                     .frame(height: 220)
                     .overlay {
                         Image(systemName: "photo.badge.plus")
                             .font(.system(size: 54, weight: .bold))
-                            .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
+                            .foregroundStyle(ConnoisseurTheme.tint(named: list.tintName))
                     }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(item.title)
+                Text(entry.title)
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
                     .shadow(radius: 8)
 
-                if !item.locationName.isEmpty {
-                    Label(item.locationName, systemImage: "mappin.and.ellipse")
+                if !entry.locationName.isEmpty {
+                    Label(entry.locationName, systemImage: "mappin.and.ellipse")
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.9))
                         .shadow(radius: 8)
                 }
 
-                Label(item.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
+                Label(entry.displayDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.9))
                     .shadow(radius: 8)
@@ -101,7 +101,7 @@ struct RankedItemDetailView: View {
     private var scorePanel: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text(item.score(using: category.sortedMetrics).scoreString)
+                Text(entry.score(using: list.sortedMetrics).scoreString)
                     .font(.system(size: 50, weight: .bold, design: .rounded))
                     .monospacedDigit()
 
@@ -112,8 +112,8 @@ struct RankedItemDetailView: View {
                 Spacer()
             }
 
-            ForEach(category.sortedMetrics) { metric in
-                let value = item.rating(for: metric)?.value ?? metric.minimumValue
+            ForEach(list.sortedMetrics) { metric in
+                let value = entry.rating(for: metric)?.value ?? metric.minimumValue
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
@@ -127,11 +127,11 @@ struct RankedItemDetailView: View {
                     }
 
                     ProgressView(value: metric.normalizedValue(for: value))
-                        .tint(metric.polarity == .negative ? .red : ConnoisseurTheme.tint(named: category.tintName))
+                        .tint(metric.polarity == .negative ? .red : ConnoisseurTheme.tint(named: list.tintName))
                 }
             }
         }
         .padding(18)
-        .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+        .connoisseurField()
     }
 }

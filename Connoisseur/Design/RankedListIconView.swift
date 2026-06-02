@@ -1,5 +1,5 @@
 //
-//  CategoryIconView.swift
+//  RankedListIconView.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CategoryIconView: View {
+struct RankedListIconView: View {
     enum Style {
         case badge
         case glyph
@@ -40,16 +40,16 @@ struct CategoryIconView: View {
     }
 
     init(
-        category: RankingCategory,
+        list: RankedList,
         size: CGFloat,
         cornerRadius: CGFloat = 8,
         style: Style = .badge,
         symbolFont: Font? = nil
     ) {
         self.init(
-            symbolName: category.symbolName,
-            tintName: category.tintName,
-            generatedIconFilename: category.generatedIconFilename,
+            symbolName: list.symbolName,
+            tintName: list.tintName,
+            generatedIconFilename: list.generatedIconFilename,
             size: size,
             cornerRadius: cornerRadius,
             style: style,
@@ -58,7 +58,7 @@ struct CategoryIconView: View {
     }
 
     var body: some View {
-        if let generatedIcon = CategoryIconStorage.image(for: generatedIconFilename) {
+        if let generatedIcon = RankedListIconStorage.image(for: generatedIconFilename) {
             generatedIcon
                 .resizable()
                 .scaledToFill()

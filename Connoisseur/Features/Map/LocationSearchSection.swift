@@ -39,7 +39,7 @@ struct LocationSearchSection: View {
             TextField("Search restaurants, venues, courses", text: $search.query)
                 .textFieldStyle(.plain)
                 .padding(14)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
 
             if !locationName.isEmpty {
                 Label(locationName, systemImage: "mappin.and.ellipse")
@@ -47,7 +47,7 @@ struct LocationSearchSection: View {
                     .foregroundStyle(tint)
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                    .connoisseurField()
             }
 
             if !search.results.isEmpty {
@@ -84,7 +84,7 @@ struct LocationSearchSection: View {
                         }
                     }
                 }
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
             }
         }
     }

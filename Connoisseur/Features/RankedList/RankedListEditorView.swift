@@ -1,5 +1,5 @@
 //
-//  CategoryEditorView.swift
+//  RankedListEditorView.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -12,7 +12,7 @@ import SwiftUI
 import ImagePlayground
 #endif
 
-struct CategoryEditorView: View {
+struct RankedListEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -20,9 +20,9 @@ struct CategoryEditorView: View {
     @Environment(\.supportsImagePlayground) private var supportsImagePlayground
     #endif
 
-    let category: RankingCategory?
+    let list: RankedList?
     let sortIndex: Int?
-    let onSave: ((RankingCategory) -> Void)?
+    let onSave: ((RankedList) -> Void)?
     private let originalGeneratedIconFilename: String?
 
     @State private var title: String
@@ -32,20 +32,21 @@ struct CategoryEditorView: View {
     @State private var generatedIconFilename: String?
     @State private var isShowingImagePlaygroundLauncher = false
     @State private var isShowingImagePlayground = false
+    @State private var isShowingIconPicker = false
     @State private var iconGenerationError: String?
     @State private var metrics: [MetricDraft]
 
-    init(category: RankingCategory?, sortIndex: Int? = nil, onSave: ((RankingCategory) -> Void)? = nil) {
-        self.category = category
+    init(list: RankedList?, sortIndex: Int? = nil, onSave: ((RankedList) -> Void)? = nil) {
+        self.list = list
         self.sortIndex = sortIndex
         self.onSave = onSave
-        self.originalGeneratedIconFilename = category?.generatedIconFilename
-        _title = State(initialValue: category?.title ?? "")
-        _prompt = State(initialValue: category?.prompt ?? "")
-        _symbolName = State(initialValue: category?.symbolName ?? "sparkles")
-        _tintName = State(initialValue: category?.tintName ?? "mint")
-        _generatedIconFilename = State(initialValue: category?.generatedIconFilename)
-        _metrics = State(initialValue: category?.sortedMetrics.map {
+        self.originalGeneratedIconFilename = list?.generatedIconFilename
+        _title = State(initialValue: list?.title ?? "")
+        _prompt = State(initialValue: list?.prompt ?? "")
+        _symbolName = State(initialValue: list?.symbolName ?? "sparkles")
+        _tintName = State(initialValue: list?.tintName ?? "mint")
+        _generatedIconFilename = State(initialValue: list?.generatedIconFilename)
+        _metrics = State(initialValue: list?.sortedMetrics.map {
             MetricDraft(id: $0.id, title: $0.title, weight: $0.weight, polarity: $0.polarity)
         } ?? [
             MetricDraft(title: "Quality", weight: 1, polarity: .positive),
@@ -79,7 +80,7 @@ struct CategoryEditorView: View {
                     }
                 }
             }
-            .navigationTitle(category == nil ? "Category" : "Edit")
+            .navigationTitle(list == nil ? "List" : "Edit")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -91,6 +92,13 @@ struct CategoryEditorView: View {
                     Button("Done", action: save)
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+            }
+            .sheet(isPresented: $isShowingIconPicker) {
+                RankedListIconPickerSheet(
+                    symbolName: $symbolName,
+                    tintName: tintName,
+                    onSelect: { _ in clearGeneratedIcon() }
+                )
             }
             .alert("Icon Not Saved", isPresented: Binding(
                 get: { iconGenerationError != nil },
@@ -126,27 +134,33 @@ struct CategoryEditorView: View {
     private var appearanceSection: some View {
         Section("Appearance") {
             VStack(alignment: .leading, spacing: 14) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], spacing: 10) {
-                    ForEach(CategoryAppearanceOptions.symbols) { option in
-                        Button {
-                            symbolName = option.systemName
-                            clearGeneratedIcon()
-                        } label: {
-                            Image(systemName: option.systemName)
-                                .font(.headline.weight(.semibold))
-                                .frame(width: 42, height: 42)
-                                .foregroundStyle(generatedIconFilename == nil && symbolName == option.systemName ? .white : ConnoisseurTheme.tint(named: tintName))
-                                .background(
-                                    generatedIconFilename == nil && symbolName == option.systemName
-                                    ? ConnoisseurTheme.tint(named: tintName)
-                                    : Color.secondary.opacity(0.12),
-                                    in: RoundedRectangle(cornerRadius: 8)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(option.title)
+                Text("Icon")
+                    .font(.headline)
+
+                Button {
+                    isShowingIconPicker = true
+                } label: {
+                    HStack(spacing: 14) {
+                        RankedListIconView(
+                            symbolName: symbolName,
+                            tintName: tintName,
+                            generatedIconFilename: generatedIconFilename,
+                            size: 48
+                        )
+
+                        Text(generatedIconFilename == nil ? iconTitle : "Generated icon")
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.tertiary)
                     }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
 
                 #if canImport(ImagePlayground)
                 Button {
@@ -175,7 +189,7 @@ struct CategoryEditorView: View {
                     .font(.headline)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 12)], spacing: 12) {
-                    ForEach(CategoryAppearanceOptions.tints) { option in
+                    ForEach(RankedListAppearanceOptions.tints) { option in
                         Button {
                             tintName = option.name
                         } label: {
@@ -202,30 +216,34 @@ struct CategoryEditorView: View {
         }
     }
 
+    private var iconTitle: String {
+        RankedListAppearanceOptions.symbols.first { $0.systemName == symbolName }?.title ?? "Custom"
+    }
+
     private func save() {
-        let savedCategory: RankingCategory
-        if let category {
-            savedCategory = category
+        let savedList: RankedList
+        if let list {
+            savedList = list
         } else {
-            savedCategory = RankingCategory(title: "", sortIndex: sortIndex ?? 0)
-            modelContext.insert(savedCategory)
+            savedList = RankedList(title: "", sortIndex: sortIndex ?? 0)
+            modelContext.insert(savedList)
         }
 
-        savedCategory.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedCategory.prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedCategory.symbolName = symbolName
-        savedCategory.tintName = tintName
-        savedCategory.generatedIconFilename = generatedIconFilename
-        savedCategory.updatedAt = .now
+        savedList.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedList.prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedList.symbolName = symbolName
+        savedList.tintName = tintName
+        savedList.generatedIconFilename = generatedIconFilename
+        savedList.updatedAt = .now
 
         if originalGeneratedIconFilename != generatedIconFilename {
-            CategoryIconStorage.deleteIcon(named: originalGeneratedIconFilename)
+            RankedListIconStorage.deleteIcon(named: originalGeneratedIconFilename)
         }
 
-        let existingMetricsByID = Dictionary(uniqueKeysWithValues: savedCategory.metrics.map { ($0.id, $0) })
+        let existingMetricsByID = Dictionary(uniqueKeysWithValues: savedList.availableMetrics.map { ($0.id, $0) })
         let keptMetricIDs = Set(metrics.map(\.id))
 
-        for oldMetric in savedCategory.metrics where !keptMetricIDs.contains(oldMetric.id) {
+        for oldMetric in savedList.availableMetrics where !keptMetricIDs.contains(oldMetric.id) {
             modelContext.delete(oldMetric)
         }
 
@@ -245,20 +263,20 @@ struct CategoryEditorView: View {
                     weight: draft.weight,
                     polarity: draft.polarity,
                     sortIndex: index,
-                    category: savedCategory
+                    list: savedList
                 )
                 modelContext.insert(metric)
-                savedCategory.metrics.append(metric)
+                savedList.appendMetric(metric)
             }
         }
 
-        onSave?(savedCategory)
+        onSave?(savedList)
         dismiss()
     }
 
     private func cancel() {
         if originalGeneratedIconFilename != generatedIconFilename {
-            CategoryIconStorage.deleteIcon(named: generatedIconFilename)
+            RankedListIconStorage.deleteIcon(named: generatedIconFilename)
         }
 
         dismiss()
@@ -266,7 +284,7 @@ struct CategoryEditorView: View {
 
     private func clearGeneratedIcon() {
         if originalGeneratedIconFilename != generatedIconFilename {
-            CategoryIconStorage.deleteIcon(named: generatedIconFilename)
+            RankedListIconStorage.deleteIcon(named: generatedIconFilename)
         }
 
         generatedIconFilename = nil
@@ -287,10 +305,10 @@ struct CategoryEditorView: View {
     private var iconGenerationConcept: String {
         let titleText = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let promptText = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        let categoryDescription = titleText.isEmpty ? "a personal ranking category" : titleText
+        let listDescription = titleText.isEmpty ? "a personal ranking list" : titleText
         let note = promptText.isEmpty ? "" : " inspired by \(promptText)"
 
-        return "A clean icon for \(categoryDescription)\(note), with \(ConnoisseurTheme.tintTitle(named: tintName).lowercased()) color accents, no words or letters"
+        return "A clean icon for \(listDescription)\(note), with \(ConnoisseurTheme.tintTitle(named: tintName).lowercased()) color accents, no words or letters"
     }
 
     private func handleGeneratedIcon(_ sourceURL: URL) {
@@ -298,7 +316,7 @@ struct CategoryEditorView: View {
 
         do {
             let previousGeneratedIconFilename = generatedIconFilename == originalGeneratedIconFilename ? nil : generatedIconFilename
-            let filename = try CategoryIconStorage.storeGeneratedIcon(from: sourceURL, replacing: previousGeneratedIconFilename)
+            let filename = try RankedListIconStorage.storeGeneratedIcon(from: sourceURL, replacing: previousGeneratedIconFilename)
             generatedIconFilename = filename
         } catch {
             iconGenerationError = error.localizedDescription

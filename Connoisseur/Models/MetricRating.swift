@@ -10,23 +10,23 @@ import SwiftData
 
 @Model
 final class MetricRating {
-    var id: UUID
-    var metricID: UUID
-    var metricTitleSnapshot: String
-    var value: Double
-    var item: RankedItem?
+    var id: UUID = UUID()
+    var metricID: UUID = UUID()
+    var metricTitleSnapshot: String = ""
+    var value: Double = 0
+    var entry: RankedEntry?
 
     init(
         id: UUID = UUID(),
         metricID: UUID,
         metricTitleSnapshot: String,
         value: Double,
-        item: RankedItem? = nil
+        entry: RankedEntry? = nil
     ) {
         self.id = id
         self.metricID = metricID
         self.metricTitleSnapshot = metricTitleSnapshot
         self.value = value
-        self.item = item
+        self.entry = entry
     }
 }

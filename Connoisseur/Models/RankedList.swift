@@ -1,5 +1,5 @@
 //
-//  RankingCategory.swift
+//  RankedList.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -9,22 +9,22 @@ import Foundation
 import SwiftData
 
 @Model
-final class RankingCategory {
-    var id: UUID
-    var title: String
-    var prompt: String
-    var symbolName: String
-    var tintName: String
+final class RankedList {
+    var id: UUID = UUID()
+    var title: String = ""
+    var prompt: String = ""
+    var symbolName: String = "trophy.fill"
+    var tintName: String = "mint"
     var generatedIconFilename: String?
     var sortIndex: Int?
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
 
-    @Relationship(deleteRule: .cascade, inverse: \RankingMetric.category)
-    var metrics: [RankingMetric]
+    @Relationship(deleteRule: .cascade, inverse: \RankingMetric.list)
+    var metrics: [RankingMetric]?
 
-    @Relationship(deleteRule: .cascade, inverse: \RankedItem.category)
-    var items: [RankedItem]
+    @Relationship(deleteRule: .cascade, inverse: \RankedEntry.list)
+    var entries: [RankedEntry]?
 
     init(
         id: UUID = UUID(),
@@ -37,7 +37,7 @@ final class RankingCategory {
         createdAt: Date = .now,
         updatedAt: Date = .now,
         metrics: [RankingMetric] = [],
-        items: [RankedItem] = []
+        entries: [RankedEntry] = []
     ) {
         self.id = id
         self.title = title
@@ -49,11 +49,27 @@ final class RankingCategory {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.metrics = metrics
-        self.items = items
+        self.entries = entries
+    }
+
+    var availableMetrics: [RankingMetric] {
+        metrics ?? []
+    }
+
+    var availableEntries: [RankedEntry] {
+        entries ?? []
+    }
+
+    var metricCount: Int {
+        availableMetrics.count
+    }
+
+    var entryCount: Int {
+        availableEntries.count
     }
 
     var sortedMetrics: [RankingMetric] {
-        metrics.sorted {
+        availableMetrics.sorted {
             if $0.sortIndex == $1.sortIndex {
                 return $0.createdAt < $1.createdAt
             }
@@ -62,8 +78,8 @@ final class RankingCategory {
         }
     }
 
-    var rankedItems: [RankedItem] {
-        items.sorted {
+    var rankedEntries: [RankedEntry] {
+        availableEntries.sorted {
             let left = $0.score(using: sortedMetrics)
             let right = $1.score(using: sortedMetrics)
 
@@ -75,21 +91,23 @@ final class RankingCategory {
         }
     }
 
-    var scoredItems: [RankedItem] {
-        rankedItems.filter { !$0.ratings.isEmpty }
+    var scoredEntries: [RankedEntry] {
+        rankedEntries.filter { !$0.availableRatings.isEmpty }
     }
 
-    static func ordered(_ categories: [RankingCategory]) -> [RankingCategory] {
-        categories.sorted {
-            guard let leftSortIndex = $0.sortIndex, let rightSortIndex = $1.sortIndex else {
-                return $0.createdAt < $1.createdAt
-            }
-
-            if leftSortIndex == rightSortIndex {
-                return $0.createdAt < $1.createdAt
-            }
-
-            return leftSortIndex < rightSortIndex
+    func appendMetric(_ metric: RankingMetric) {
+        if metrics == nil {
+            metrics = []
         }
+
+        metrics?.append(metric)
+    }
+
+    func appendEntry(_ entry: RankedEntry) {
+        if entries == nil {
+            entries = []
+        }
+
+        entries?.append(entry)
     }
 }

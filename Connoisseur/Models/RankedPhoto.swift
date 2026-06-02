@@ -10,18 +10,18 @@ import SwiftData
 
 @Model
 final class RankedPhoto {
-    var id: UUID
+    var id: UUID = UUID()
 
     @Attribute(.externalStorage)
-    var data: Data
+    var data: Data = Data()
 
-    var createdAt: Date
-    var item: RankedItem?
+    var createdAt: Date = Date()
+    var entry: RankedEntry?
 
-    init(id: UUID = UUID(), data: Data, createdAt: Date = .now, item: RankedItem? = nil) {
+    init(id: UUID = UUID(), data: Data, createdAt: Date = .now, entry: RankedEntry? = nil) {
         self.id = id
         self.data = data
         self.createdAt = createdAt
-        self.item = item
+        self.entry = entry
     }
 }

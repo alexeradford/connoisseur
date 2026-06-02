@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct MetricSparklineView: View {
-    let category: RankingCategory
-    let item: RankedItem
+    let list: RankedList
+    let entry: RankedEntry
 
     var body: some View {
         HStack(spacing: 5) {
-            ForEach(category.sortedMetrics) { metric in
-                let rawValue = item.rating(for: metric)?.value ?? metric.minimumValue
+            ForEach(list.sortedMetrics) { metric in
+                let rawValue = entry.rating(for: metric)?.value ?? metric.minimumValue
                 let normalizedValue = metric.normalizedValue(for: rawValue)
 
                 Capsule()
@@ -30,7 +30,7 @@ struct MetricSparklineView: View {
     private func fill(for metric: RankingMetric) -> Color {
         switch metric.polarity {
         case .positive:
-            ConnoisseurTheme.tint(named: category.tintName)
+            ConnoisseurTheme.tint(named: list.tintName)
         case .neutral:
             .secondary
         case .negative:

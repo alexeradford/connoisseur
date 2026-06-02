@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Connoisseur uses the camera to take photos of the items you rank.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Connoisseur uses location to help place ranked items on your map.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

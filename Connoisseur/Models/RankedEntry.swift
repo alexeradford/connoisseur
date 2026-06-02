@@ -1,5 +1,5 @@
 //
-//  RankedItem.swift
+//  RankedEntry.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -9,24 +9,24 @@ import Foundation
 import SwiftData
 
 @Model
-final class RankedItem {
-    var id: UUID
-    var title: String
-    var notes: String
-    var locationName: String
-    var locationAddress: String
+final class RankedEntry {
+    var id: UUID = UUID()
+    var title: String = ""
+    var notes: String = ""
+    var locationName: String = ""
+    var locationAddress: String = ""
     var latitude: Double?
     var longitude: Double?
     var rankedAt: Date?
-    var createdAt: Date
-    var updatedAt: Date
-    var category: RankingCategory?
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
+    var list: RankedList?
 
-    @Relationship(deleteRule: .cascade, inverse: \MetricRating.item)
-    var ratings: [MetricRating]
+    @Relationship(deleteRule: .cascade, inverse: \MetricRating.entry)
+    var ratings: [MetricRating]?
 
-    @Relationship(deleteRule: .cascade, inverse: \RankedPhoto.item)
-    var photos: [RankedPhoto]
+    @Relationship(deleteRule: .cascade, inverse: \RankedPhoto.entry)
+    var photos: [RankedPhoto]?
 
     init(
         id: UUID = UUID(),
@@ -39,7 +39,7 @@ final class RankedItem {
         rankedAt: Date = .now,
         createdAt: Date = .now,
         updatedAt: Date = .now,
-        category: RankingCategory? = nil,
+        list: RankedList? = nil,
         ratings: [MetricRating] = [],
         photos: [RankedPhoto] = []
     ) {
@@ -53,7 +53,7 @@ final class RankedItem {
         self.rankedAt = rankedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.category = category
+        self.list = list
         self.ratings = ratings
         self.photos = photos
     }
@@ -67,12 +67,20 @@ final class RankedItem {
         rankedAt ?? createdAt
     }
 
+    var availableRatings: [MetricRating] {
+        ratings ?? []
+    }
+
+    var availablePhotos: [RankedPhoto] {
+        photos ?? []
+    }
+
     var sortedPhotos: [RankedPhoto] {
-        photos.sorted { $0.createdAt < $1.createdAt }
+        availablePhotos.sorted { $0.createdAt < $1.createdAt }
     }
 
     func rating(for metric: RankingMetric) -> MetricRating? {
-        ratings.first { $0.metricID == metric.id }
+        availableRatings.first { $0.metricID == metric.id }
     }
 
     func score(using metrics: [RankingMetric]) -> Double {
@@ -87,6 +95,22 @@ final class RankedItem {
         }
 
         return earnedScore / possibleScore * 10
+    }
+
+    func appendRating(_ rating: MetricRating) {
+        if ratings == nil {
+            ratings = []
+        }
+
+        ratings?.append(rating)
+    }
+
+    func appendPhoto(_ photo: RankedPhoto) {
+        if photos == nil {
+            photos = []
+        }
+
+        photos?.append(photo)
     }
 }
 

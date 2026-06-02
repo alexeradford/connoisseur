@@ -1,5 +1,6 @@
+
 //
-//  RankingSingleItemMapView.swift
+//  RankingSingleEntryMapView.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -8,13 +9,13 @@
 import MapKit
 import SwiftUI
 
-struct RankingSingleItemMapView: View {
-    let item: RankedItem
+struct RankingSingleEntryMapView: View {
+    let entry: RankedEntry
 
     var body: some View {
-        if let coordinate = item.coordinate {
+        if let coordinate = entry.coordinate {
             Map(initialPosition: .region(region(for: coordinate))) {
-                Marker(item.locationName.isEmpty ? item.title : item.locationName, coordinate: CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude))
+                Marker(entry.locationName.isEmpty ? entry.title : entry.locationName, coordinate: CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude))
             }
             .mapStyle(.standard(elevation: .realistic))
         }

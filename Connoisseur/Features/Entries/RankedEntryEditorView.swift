@@ -1,5 +1,5 @@
 //
-//  ItemEditorView.swift
+//  RankedEntryEditorView.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -9,11 +9,15 @@ import PhotosUI
 import SwiftData
 import SwiftUI
 
-struct ItemEditorView: View {
+#if os(iOS)
+import UIKit
+#endif
+
+struct RankedEntryEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    let category: RankingCategory
-    let item: RankedItem?
+    let list: RankedList
+    let entry: RankedEntry?
 
     @State private var title: String
     @State private var notes: String
@@ -26,20 +30,21 @@ struct ItemEditorView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var pendingPhotoData: [Data] = []
     @State private var isShowingPlacePicker = false
+    @State private var isShowingCamera = false
 
-    init(category: RankingCategory, item: RankedItem?) {
-        self.category = category
-        self.item = item
-        _title = State(initialValue: item?.title ?? "")
-        _notes = State(initialValue: item?.notes ?? "")
-        _ratings = State(initialValue: Dictionary(uniqueKeysWithValues: category.sortedMetrics.map { metric in
-            (metric.id, item?.rating(for: metric)?.value ?? 7)
+    init(list: RankedList, entry: RankedEntry?) {
+        self.list = list
+        self.entry = entry
+        _title = State(initialValue: entry?.title ?? "")
+        _notes = State(initialValue: entry?.notes ?? "")
+        _ratings = State(initialValue: Dictionary(uniqueKeysWithValues: list.sortedMetrics.map { metric in
+            (metric.id, entry?.rating(for: metric)?.value ?? 7)
         }))
-        _locationName = State(initialValue: item?.locationName ?? "")
-        _locationAddress = State(initialValue: item?.locationAddress ?? "")
-        _latitude = State(initialValue: item?.latitude)
-        _longitude = State(initialValue: item?.longitude)
-        _rankedAt = State(initialValue: item?.displayDate ?? .now)
+        _locationName = State(initialValue: entry?.locationName ?? "")
+        _locationAddress = State(initialValue: entry?.locationAddress ?? "")
+        _latitude = State(initialValue: entry?.latitude)
+        _longitude = State(initialValue: entry?.longitude)
+        _rankedAt = State(initialValue: entry?.displayDate ?? .now)
     }
 
     var body: some View {
@@ -55,7 +60,7 @@ struct ItemEditorView: View {
                 .padding()
             }
             .background(ConnoisseurTheme.background.ignoresSafeArea())
-            .navigationTitle(item == nil ? "Add" : "Edit")
+            .navigationTitle(entry == nil ? "Add" : "Edit")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -78,21 +83,29 @@ struct ItemEditorView: View {
             .sheet(isPresented: $isShowingPlacePicker) {
                 PlacePickerSheetView(
                     initialLocation: selectedRankedLocation,
-                    tintName: category.tintName,
+                    tintName: list.tintName,
                     applyLocation: applyLocation
                 )
             }
+#if os(iOS)
+            .fullScreenCover(isPresented: $isShowingCamera) {
+                CameraPicker { data in
+                    pendingPhotoData.append(data)
+                }
+                .ignoresSafeArea()
+            }
+#endif
         }
     }
 
     private var photoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             ZStack {
-                if let data = pendingPhotoData.first ?? item?.sortedPhotos.first?.data {
+                if let data = pendingPhotoData.first ?? entry?.sortedPhotos.first?.data {
                     PhotoThumbnail(data: data)
                 } else {
                     Rectangle()
-                        .fill(ConnoisseurTheme.tint(named: category.tintName).opacity(0.16))
+                        .fill(ConnoisseurTheme.tint(named: list.tintName).opacity(0.16))
                         .overlay {
                             VStack(spacing: 10) {
                                 Image(systemName: "camera.fill")
@@ -100,21 +113,38 @@ struct ItemEditorView: View {
                                 Text("Make it visual")
                                     .font(.headline)
                             }
-                            .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
+                            .foregroundStyle(ConnoisseurTheme.tint(named: list.tintName))
                         }
                 }
             }
             .frame(height: 240)
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            PhotosPicker(selection: $selectedPhotoItems, matching: .images) {
-                Label("Photos", systemImage: "photo.badge.plus")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+            HStack(spacing: 12) {
+                PhotosPicker(selection: $selectedPhotoItems, matching: .images) {
+                    Label("Photos", systemImage: "photo.badge.plus")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .tint(ConnoisseurTheme.tint(named: list.tintName))
+
+#if os(iOS)
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button {
+                        isShowingCamera = true
+                    } label: {
+                        Label("Camera", systemImage: "camera.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(ConnoisseurTheme.tint(named: list.tintName))
+                }
+#endif
             }
-            .buttonStyle(.bordered)
-            .tint(ConnoisseurTheme.tint(named: category.tintName))
         }
     }
 
@@ -124,13 +154,13 @@ struct ItemEditorView: View {
                 .font(.title.bold())
                 .textFieldStyle(.plain)
                 .padding(16)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
 
             TextField("Notes", text: $notes, axis: .vertical)
                 .lineLimit(4...10)
                 .textFieldStyle(.plain)
                 .padding(16)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
         }
     }
 
@@ -142,7 +172,7 @@ struct ItemEditorView: View {
             DatePicker("Date and Time", selection: $rankedAt, displayedComponents: [.date, .hourAndMinute])
                 .datePickerStyle(.compact)
                 .padding(14)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
         }
     }
 
@@ -158,7 +188,7 @@ struct ItemEditorView: View {
                     .font(.title3.monospacedDigit().weight(.bold))
             }
 
-            ForEach(category.sortedMetrics) { metric in
+            ForEach(list.sortedMetrics) { metric in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Label(metric.title, systemImage: metric.polarity.symbolName)
@@ -178,10 +208,10 @@ struct ItemEditorView: View {
                         in: metric.minimumValue...metric.maximumValue,
                         step: 0.1
                     )
-                    .tint(metric.polarity == .negative ? .red : ConnoisseurTheme.tint(named: category.tintName))
+                    .tint(metric.polarity == .negative ? .red : ConnoisseurTheme.tint(named: list.tintName))
                 }
                 .padding(14)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
             }
         }
     }
@@ -211,7 +241,7 @@ struct ItemEditorView: View {
                 HStack(spacing: 12) {
                     Image(systemName: selectedRankedLocation == nil ? "mappin.and.ellipse.circle" : "mappin.and.ellipse")
                         .font(.title2.weight(.bold))
-                        .foregroundStyle(ConnoisseurTheme.tint(named: category.tintName))
+                        .foregroundStyle(ConnoisseurTheme.tint(named: list.tintName))
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(locationName.isEmpty ? "Add Place" : locationName)
@@ -231,7 +261,7 @@ struct ItemEditorView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(14)
-                .background(.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 8))
+                .connoisseurField()
             }
             .buttonStyle(.plain)
         }
@@ -249,7 +279,7 @@ struct ItemEditorView: View {
     }
 
     private var projectedScore: Double {
-        let scoringMetrics = category.sortedMetrics.filter { $0.polarity != .neutral && $0.effectiveWeight > 0 }
+        let scoringMetrics = list.sortedMetrics.filter { $0.polarity != .neutral && $0.effectiveWeight > 0 }
         let possibleScore = scoringMetrics.reduce(0) { $0 + $1.effectiveWeight }
         guard possibleScore > 0 else { return 0 }
 
@@ -264,8 +294,8 @@ struct ItemEditorView: View {
         Task {
             var imageData: [Data] = []
 
-            for item in selectedPhotoItems {
-                if let data = try? await item.loadTransferable(type: Data.self) {
+            for entry in selectedPhotoItems {
+                if let data = try? await entry.loadTransferable(type: Data.self) {
                     imageData.append(data)
                 }
             }
@@ -283,44 +313,44 @@ struct ItemEditorView: View {
 
     private func save() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let savedItem: RankedItem
-        if let item {
-            savedItem = item
+        let savedEntry: RankedEntry
+        if let entry {
+            savedEntry = entry
         } else {
-            savedItem = RankedItem(title: trimmedTitle, category: category)
-            modelContext.insert(savedItem)
-            category.items.append(savedItem)
+            savedEntry = RankedEntry(title: trimmedTitle, list: list)
+            modelContext.insert(savedEntry)
+            list.appendEntry(savedEntry)
         }
 
-        savedItem.title = trimmedTitle
-        savedItem.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedItem.locationName = locationName.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedItem.locationAddress = locationAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedItem.latitude = latitude
-        savedItem.longitude = longitude
-        savedItem.rankedAt = rankedAt
-        savedItem.updatedAt = .now
+        savedEntry.title = trimmedTitle
+        savedEntry.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedEntry.locationName = locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedEntry.locationAddress = locationAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedEntry.latitude = latitude
+        savedEntry.longitude = longitude
+        savedEntry.rankedAt = rankedAt
+        savedEntry.updatedAt = .now
 
-        for metric in category.sortedMetrics {
+        for metric in list.sortedMetrics {
             let value = ratings[metric.id] ?? metric.minimumValue
 
-            if let existingRating = savedItem.rating(for: metric) {
+            if let existingRating = savedEntry.rating(for: metric) {
                 existingRating.value = value
                 existingRating.metricTitleSnapshot = metric.title
             } else {
-                let rating = MetricRating(metricID: metric.id, metricTitleSnapshot: metric.title, value: value, item: savedItem)
+                let rating = MetricRating(metricID: metric.id, metricTitleSnapshot: metric.title, value: value, entry: savedEntry)
                 modelContext.insert(rating)
-                savedItem.ratings.append(rating)
+                savedEntry.appendRating(rating)
             }
         }
 
         for data in pendingPhotoData {
-            let photo = RankedPhoto(data: data, item: savedItem)
+            let photo = RankedPhoto(data: data, entry: savedEntry)
             modelContext.insert(photo)
-            savedItem.photos.append(photo)
+            savedEntry.appendPhoto(photo)
         }
 
-        category.updatedAt = .now
+        list.updatedAt = .now
         dismiss()
     }
 }

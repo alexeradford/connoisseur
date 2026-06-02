@@ -10,15 +10,15 @@ import SwiftData
 
 @Model
 final class RankingMetric {
-    var id: UUID
-    var title: String
-    var weight: Double
-    var minimumValue: Double
-    var maximumValue: Double
-    var polarityRawValue: String
-    var sortIndex: Int
-    var createdAt: Date
-    var category: RankingCategory?
+    var id: UUID = UUID()
+    var title: String = ""
+    var weight: Double = 1
+    var minimumValue: Double = 0
+    var maximumValue: Double = 10
+    var polarityRawValue: String = MetricPolarity.positive.rawValue
+    var sortIndex: Int = 0
+    var createdAt: Date = Date()
+    var list: RankedList?
 
     init(
         id: UUID = UUID(),
@@ -29,7 +29,7 @@ final class RankingMetric {
         polarity: MetricPolarity = .positive,
         sortIndex: Int = 0,
         createdAt: Date = .now,
-        category: RankingCategory? = nil
+        list: RankedList? = nil
     ) {
         self.id = id
         self.title = title
@@ -39,7 +39,7 @@ final class RankingMetric {
         self.polarityRawValue = polarity.rawValue
         self.sortIndex = sortIndex
         self.createdAt = createdAt
-        self.category = category
+        self.list = list
     }
 
     var polarity: MetricPolarity {

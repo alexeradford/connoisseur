@@ -50,7 +50,7 @@ struct OnboardingIntroPageView: View {
                         .font(.title3.weight(.bold))
                         .foregroundStyle(ConnoisseurTheme.tint(named: tintName))
                         .frame(width: 48, height: 48)
-                        .background(.white.opacity(0.72), in: Circle())
+                        .background(.regularMaterial, in: Circle())
                 }
             }
 

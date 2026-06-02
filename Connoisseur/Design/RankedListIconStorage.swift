@@ -1,5 +1,5 @@
 //
-//  CategoryIconStorage.swift
+//  RankedListIconStorage.swift
 //  Connoisseur
 //
 //  Created by Codex on 2026-05-19.
@@ -14,7 +14,7 @@ import UIKit
 import AppKit
 #endif
 
-enum CategoryIconStorage {
+enum RankedListIconStorage {
     private static let folderName = "CategoryIcons"
 
     static func image(for filename: String?) -> Image? {

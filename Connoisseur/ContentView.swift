@@ -9,14 +9,14 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    @Query(sort: \RankingCategory.createdAt) private var categories: [RankingCategory]
+    @Query(sort: \RankedList.createdAt) private var lists: [RankedList]
 
     var body: some View {
         Group {
-            if categories.isEmpty {
+            if lists.isEmpty {
                 OnboardingFlowView()
             } else {
-                RankingsHomeView()
+                ConnoisseurTabView()
             }
         }
     }
@@ -25,9 +25,9 @@ struct ContentView: View {
 #Preview("Onboarding") {
     ContentView()
         .modelContainer(for: [
-            RankingCategory.self,
+            RankedList.self,
             RankingMetric.self,
-            RankedItem.self,
+            RankedEntry.self,
             MetricRating.self,
             RankedPhoto.self,
         ], inMemory: true)

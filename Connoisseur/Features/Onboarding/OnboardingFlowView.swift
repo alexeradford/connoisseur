@@ -20,13 +20,14 @@ struct OnboardingFlowView: View {
     #endif
 
     @State private var step = 0
-    @State private var categoryTitle = ""
-    @State private var categoryPrompt = ""
+    @State private var listTitle = ""
+    @State private var listPrompt = ""
     @State private var symbolName = "sparkles"
-    @State private var tintName = "mint"
+    @State private var tintName = "blue"
     @State private var generatedIconFilename: String?
     @State private var isShowingImagePlaygroundLauncher = false
     @State private var isShowingImagePlayground = false
+    @State private var isShowingIconPicker = false
     @State private var iconGenerationError: String?
     @State private var metrics: [MetricDraft] = [
         MetricDraft(title: "Taste", weight: 1.5, polarity: .positive),
@@ -34,14 +35,14 @@ struct OnboardingFlowView: View {
         MetricDraft(title: "Price sting", weight: 0.8, polarity: .negative),
     ]
 
-    private let categoryStepIndex = 3
+    private let listStepIndex = 3
     private let metricsStepIndex = 4
     private let finishStepIndex = 5
     private let totalSteps = 6
 
     var body: some View {
         ZStack {
-            ConnoisseurTheme.background
+            ConnoisseurTheme.onboardingBackground
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
@@ -61,6 +62,13 @@ struct OnboardingFlowView: View {
             }
             .padding()
             .animation(.spring(response: 0.45, dampingFraction: 0.78), value: step)
+        }
+        .sheet(isPresented: $isShowingIconPicker) {
+            RankedListIconPickerSheet(
+                symbolName: $symbolName,
+                tintName: tintName,
+                onSelect: { _ in clearGeneratedIcon() }
+            )
         }
         .alert("Icon Not Saved", isPresented: Binding(
             get: { iconGenerationError != nil },
@@ -94,7 +102,7 @@ struct OnboardingFlowView: View {
 
     private var onboardingHeader: some View {
         VStack(spacing: 14) {
-            CategoryIconView(
+            RankedListIconView(
                 symbolName: symbolName,
                 tintName: tintName,
                 generatedIconFilename: generatedIconFilename,
@@ -143,14 +151,14 @@ struct OnboardingFlowView: View {
         case 2:
             OnboardingIntroPageView(
                 title: "Pin the places",
-                subtitle: "Tag where each item happened, then flip to the map when the list becomes a trail.",
+                subtitle: "Tag where each entry happened, then flip to the map when the list becomes a trail.",
                 symbolName: "map.fill",
                 tintName: tintName,
                 detailSymbols: ["mappin.and.ellipse", "camera.fill", "list.number"],
                 animationValue: step
             )
-        case categoryStepIndex:
-            categoryStep
+        case listStepIndex:
+            listStep
         case metricsStepIndex:
             metricsStep
         default:
@@ -158,10 +166,10 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private var categoryStep: some View {
+    private var listStep: some View {
         ScrollView {
             VStack(spacing: 18) {
-                TextField("What are you ranking?", text: $categoryTitle)
+                TextField("What are you ranking?", text: $listTitle)
                     .textFieldStyle(.plain)
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
@@ -169,7 +177,7 @@ struct OnboardingFlowView: View {
                     .padding(.vertical, 16)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
-                TextField("Tiny note, like 'city martinis' or 'rewatchables'", text: $categoryPrompt, axis: .vertical)
+                TextField("Tiny note, like 'city martinis' or 'rewatchables'", text: $listPrompt, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(16)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
@@ -177,7 +185,6 @@ struct OnboardingFlowView: View {
                 iconPicker
                 tintPicker
             }
-            .frame(maxWidth: 560)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 2)
         }
@@ -185,28 +192,36 @@ struct OnboardingFlowView: View {
     }
 
     private var iconPicker: some View {
-        VStack(spacing: 12) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 10)], spacing: 10) {
-                ForEach(CategoryAppearanceOptions.symbols) { option in
-                    Button {
-                        symbolName = option.systemName
-                        clearGeneratedIcon()
-                    } label: {
-                        Image(systemName: option.systemName)
-                            .font(.title3.weight(.semibold))
-                            .frame(width: 46, height: 46)
-                            .foregroundStyle(generatedIconFilename == nil && symbolName == option.systemName ? .white : ConnoisseurTheme.tint(named: tintName))
-                            .background(
-                                generatedIconFilename == nil && symbolName == option.systemName
-                                ? ConnoisseurTheme.tint(named: tintName)
-                                : .white.opacity(0.72),
-                                in: RoundedRectangle(cornerRadius: 8)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(option.title)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Icon")
+                .font(.headline)
+
+            Button {
+                isShowingIconPicker = true
+            } label: {
+                HStack(spacing: 14) {
+                    RankedListIconView(
+                        symbolName: symbolName,
+                        tintName: tintName,
+                        generatedIconFilename: generatedIconFilename,
+                        size: 48
+                    )
+
+                    Text(generatedIconFilename == nil ? iconTitle : "Generated icon")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
+                .padding(16)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             #if canImport(ImagePlayground)
             Button {
@@ -233,25 +248,31 @@ struct OnboardingFlowView: View {
     }
 
     private var tintPicker: some View {
-        HStack(spacing: 12) {
-            ForEach(CategoryAppearanceOptions.tints) { option in
-                Button {
-                    tintName = option.name
-                } label: {
-                    Circle()
-                        .fill(ConnoisseurTheme.tint(named: option.name))
-                        .frame(width: 28, height: 28)
-                        .overlay {
-                            if tintName == option.name {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Color")
+                .font(.headline)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 28), spacing: 12)], spacing: 12) {
+                ForEach(RankedListAppearanceOptions.tints) { option in
+                    Button {
+                        tintName = option.name
+                    } label: {
+                        Circle()
+                            .fill(ConnoisseurTheme.tint(named: option.name))
+                            .frame(width: 28, height: 28)
+                            .overlay {
+                                if tintName == option.name {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                }
                             }
-                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(option.title)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(option.title)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -273,7 +294,6 @@ struct OnboardingFlowView: View {
                 .buttonStyle(.bordered)
                 .tint(ConnoisseurTheme.tint(named: tintName))
             }
-            .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 2)
         }
@@ -284,7 +304,7 @@ struct OnboardingFlowView: View {
     private var finishStep: some View {
         VStack(spacing: 18) {
             VStack(spacing: 12) {
-                Text(categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your first list" : categoryTitle)
+                Text(listTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your first list" : listTitle)
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
 
@@ -294,14 +314,14 @@ struct OnboardingFlowView: View {
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 7)
-                            .background(.white.opacity(0.7), in: Capsule())
+                            .background(.regularMaterial, in: Capsule())
                     }
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             }
 
-            CategoryIconView(
+            RankedListIconView(
                 symbolName: symbolName,
                 tintName: tintName,
                 generatedIconFilename: generatedIconFilename,
@@ -340,7 +360,7 @@ struct OnboardingFlowView: View {
 
             Button {
                 if step == finishStepIndex {
-                    createCategory()
+                    createRankedList()
                 } else {
                     step += 1
                 }
@@ -353,16 +373,15 @@ struct OnboardingFlowView: View {
             .tint(ConnoisseurTheme.tint(named: tintName))
             .disabled(!canContinue)
         }
-        .frame(maxWidth: 560)
     }
 
     private var isCreationStep: Bool {
-        step >= categoryStepIndex
+        step >= listStepIndex
     }
 
     private var stepTitle: String {
         switch step {
-        case categoryStepIndex:
+        case listStepIndex:
             "Start a list"
         case metricsStepIndex:
             "Pick the scorecard"
@@ -373,7 +392,7 @@ struct OnboardingFlowView: View {
 
     private var stepSubtitle: String {
         switch step {
-        case categoryStepIndex:
+        case listStepIndex:
             "One obsession is plenty. Add more later only if you want."
         case metricsStepIndex:
             "Weight what matters. Mark anything that should help, hurt, or simply describe."
@@ -384,8 +403,8 @@ struct OnboardingFlowView: View {
 
     private var canContinue: Bool {
         switch step {
-        case categoryStepIndex:
-            !categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case listStepIndex:
+            !listTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case metricsStepIndex:
             metrics.contains { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         default:
@@ -393,10 +412,10 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func createCategory() {
-        let category = RankingCategory(
-            title: categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines),
-            prompt: categoryPrompt.trimmingCharacters(in: .whitespacesAndNewlines),
+    private func createRankedList() {
+        let list = RankedList(
+            title: listTitle.trimmingCharacters(in: .whitespacesAndNewlines),
+            prompt: listPrompt.trimmingCharacters(in: .whitespacesAndNewlines),
             symbolName: symbolName,
             tintName: tintName,
             generatedIconFilename: generatedIconFilename
@@ -411,28 +430,32 @@ struct OnboardingFlowView: View {
                 weight: draft.weight,
                 polarity: draft.polarity,
                 sortIndex: index,
-                category: category
+                list: list
             )
-            category.metrics.append(metric)
+            list.appendMetric(metric)
         }
 
-        modelContext.insert(category)
+        modelContext.insert(list)
+    }
+
+    private var iconTitle: String {
+        RankedListAppearanceOptions.symbols.first { $0.systemName == symbolName }?.title ?? "Custom"
     }
 
     private var iconGenerationConcept: String {
-        let titleText = categoryTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        let promptText = categoryPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        let categoryDescription = titleText.isEmpty ? "a personal ranking category" : titleText
+        let titleText = listTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let promptText = listPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let listDescription = titleText.isEmpty ? "a personal ranking list" : titleText
         let note = promptText.isEmpty ? "" : " inspired by \(promptText)"
 
-        return "A clean icon for \(categoryDescription)\(note), with \(ConnoisseurTheme.tintTitle(named: tintName).lowercased()) color accents, no words or letters"
+        return "A clean icon for \(listDescription)\(note), with \(ConnoisseurTheme.tintTitle(named: tintName).lowercased()) color accents, no words or letters"
     }
 
     private func handleGeneratedIcon(_ sourceURL: URL) {
         isShowingImagePlaygroundLauncher = false
 
         do {
-            let filename = try CategoryIconStorage.storeGeneratedIcon(from: sourceURL, replacing: generatedIconFilename)
+            let filename = try RankedListIconStorage.storeGeneratedIcon(from: sourceURL, replacing: generatedIconFilename)
             generatedIconFilename = filename
         } catch {
             iconGenerationError = error.localizedDescription
@@ -440,7 +463,7 @@ struct OnboardingFlowView: View {
     }
 
     private func clearGeneratedIcon() {
-        CategoryIconStorage.deleteIcon(named: generatedIconFilename)
+        RankedListIconStorage.deleteIcon(named: generatedIconFilename)
         generatedIconFilename = nil
     }
 
