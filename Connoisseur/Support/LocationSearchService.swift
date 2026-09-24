@@ -20,6 +20,7 @@ final class LocationSearchService: NSObject, ObservableObject, MKLocalSearchComp
     @Published private(set) var results: [MKLocalSearchCompletion] = []
 
     private let completer: MKLocalSearchCompleter
+    private let nearbyBusinessQueries = ["restaurants", "cafes", "bars", "bakeries", "shops"]
 
     override init() {
         let completer = MKLocalSearchCompleter()
@@ -69,16 +70,42 @@ final class LocationSearchService: NSObject, ObservableObject, MKLocalSearchComp
     }
 
     func nearbySuggestions(around coordinate: RankingCoordinate?) async -> [RankedLocation] {
-        await search("places", around: coordinate)
+        guard coordinate != nil else { return [] }
+
+        var locations: [RankedLocation] = []
+        var seenLocationIDs = Set<String>()
+
+        for query in nearbyBusinessQueries {
+            let results = await search(query, around: coordinate, includesAddresses: false, limit: 6)
+
+            for location in results where seenLocationIDs.insert(location.id).inserted {
+                locations.append(location)
+
+                if locations.count == 12 {
+                    return locations
+                }
+            }
+        }
+
+        return locations
     }
 
     func search(_ query: String, around coordinate: RankingCoordinate?) async -> [RankedLocation] {
+        await search(query, around: coordinate, includesAddresses: true, limit: 12)
+    }
+
+    private func search(
+        _ query: String,
+        around coordinate: RankingCoordinate?,
+        includesAddresses: Bool,
+        limit: Int
+    ) async -> [RankedLocation] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else { return [] }
 
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = trimmedQuery
-        request.resultTypes = [.pointOfInterest, .address]
+        request.resultTypes = includesAddresses ? [.pointOfInterest, .address] : [.pointOfInterest]
 
         if let coordinate {
             request.region = MKCoordinateRegion(
@@ -88,7 +115,7 @@ final class LocationSearchService: NSObject, ObservableObject, MKLocalSearchComp
         }
 
         guard let response = try? await MKLocalSearch(request: request).start() else { return [] }
-        return response.mapItems.prefix(12).compactMap(location(from:))
+        return response.mapItems.prefix(limit).compactMap(location(from:))
     }
 
     private func location(from mapItem: MKMapItem) -> RankedLocation? {

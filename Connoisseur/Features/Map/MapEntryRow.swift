@@ -48,8 +48,6 @@ struct MapEntryRow: View {
                 .font(.headline.monospacedDigit().bold())
                 .foregroundStyle(isSelected ? ConnoisseurTheme.tint(named: item.list.tintName) : .primary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
         .contentShape(Rectangle())
     }
 }

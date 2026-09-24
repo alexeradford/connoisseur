@@ -248,7 +248,7 @@ extension View {
         isPresented: Bool = true,
         selection: Binding<TabSheetDetent>,
         detents: [TabSheetDetent],
-        horizontalPadding: CGFloat = 0,
+        horizontalPadding: CGFloat = 10,
         bottomSpacing: CGFloat = 10,
         cornerRadius: CGFloat = 32,
         showsDragIndicator: Bool = true,

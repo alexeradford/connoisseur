@@ -91,20 +91,7 @@ struct MapEntryOverviewView: View {
             ForEach(list.sortedMetrics) { metric in
                 let value = entry.rating(for: metric)?.value ?? metric.minimumValue
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Label(metric.title, systemImage: metric.polarity.symbolName)
-                            .font(.subheadline.weight(.semibold))
-
-                        Spacer()
-
-                        Text(value.scoreString)
-                            .font(.subheadline.monospacedDigit().weight(.bold))
-                    }
-
-                    ProgressView(value: metric.normalizedValue(for: value))
-                        .tint(metric.polarity == .negative ? .red : tint)
-                }
+                MetricScoreRow(metric: metric, value: value, tint: tint)
             }
         }
     }

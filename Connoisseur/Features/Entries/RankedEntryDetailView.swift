@@ -5,12 +5,17 @@
 //  Created by Codex on 2026-05-19.
 //
 
+import SwiftData
 import SwiftUI
 
 struct RankedEntryDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
     let list: RankedList
     let entry: RankedEntry
     @State private var isEditing = false
+    @State private var isConfirmingDeletion = false
 
     var body: some View {
         ScrollView {
@@ -47,12 +52,33 @@ struct RankedEntryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
 #endif
         .toolbar {
-            Button {
-                isEditing = true
-            } label: {
-                Image(systemName: "pencil")
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button(role: .destructive) {
+                    isConfirmingDeletion = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .tint(.red)
+                .accessibilityLabel("Delete entry")
+                .confirmationDialog(
+                    "Delete Entry?",
+                    isPresented: $isConfirmingDeletion,
+                    titleVisibility: .visible
+                ) {
+                    Button("Delete Entry", role: .destructive) {
+                        deleteEntry()
+                    }
+                } message: {
+                    Text("Delete \"\(entry.title)\" from \(list.title)?")
+                }
+
+                Button {
+                    isEditing = true
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .accessibilityLabel("Edit entry")
             }
-            .accessibilityLabel("Edit entry")
         }
         .sheet(isPresented: $isEditing) {
             RankedEntryEditorView(list: list, entry: entry)
@@ -115,23 +141,21 @@ struct RankedEntryDetailView: View {
             ForEach(list.sortedMetrics) { metric in
                 let value = entry.rating(for: metric)?.value ?? metric.minimumValue
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Label(metric.title, systemImage: metric.polarity.symbolName)
-                            .font(.subheadline.weight(.semibold))
-
-                        Spacer()
-
-                        Text(value.scoreString)
-                            .font(.subheadline.monospacedDigit().weight(.bold))
-                    }
-
-                    ProgressView(value: metric.normalizedValue(for: value))
-                        .tint(metric.polarity == .negative ? .red : ConnoisseurTheme.tint(named: list.tintName))
-                }
+                MetricScoreRow(
+                    metric: metric,
+                    value: value,
+                    tint: ConnoisseurTheme.tint(named: list.tintName)
+                )
             }
         }
         .padding(18)
         .connoisseurField()
+    }
+
+    private func deleteEntry() {
+        list.removeEntry(entry)
+        list.updatedAt = .now
+        modelContext.delete(entry)
+        dismiss()
     }
 }

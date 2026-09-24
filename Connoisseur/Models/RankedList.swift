@@ -110,4 +110,8 @@ final class RankedList {
 
         entries?.append(entry)
     }
+
+    func removeEntry(_ entry: RankedEntry) {
+        entries?.removeAll { $0.id == entry.id }
+    }
 }
